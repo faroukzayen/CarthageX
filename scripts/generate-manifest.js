@@ -49,6 +49,23 @@ function sortByName(fileList) {
   return [...fileList].sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }));
 }
 
+function removeDuplicateSuffix(fileName) {
+  return fileName.replace(/\s+\(\d+\)(\.[^.]+)$/i, '$1');
+}
+
+function deduplicateFiles(fileList) {
+  const seen = new Set();
+
+  return fileList.filter((file) => {
+    const key = normalize(removeDuplicateSuffix(file));
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
 function main() {
   if (!fs.existsSync(imagesDir)) {
     throw new Error('Dossier images introuvable : ' + imagesDir);
@@ -71,8 +88,10 @@ function main() {
   for (const folder of folders) {
     const scenarioId = matchScenario(folder);
     const folderPath = path.join(imagesDir, folder);
-    const files = fs.readdirSync(folderPath)
-      .filter((file) => /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(file));
+    const files = deduplicateFiles(
+      fs.readdirSync(folderPath)
+        .filter((file) => /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(file))
+    );
 
     if (!scenarioId) {
       continue;
@@ -125,8 +144,10 @@ function buildManifest() {
   for (const folder of folders) {
     const scenarioId = matchScenario(folder);
     const folderPath = path.join(imagesDir, folder);
-    const files = fs.readdirSync(folderPath)
-      .filter((file) => /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(file));
+    const files = deduplicateFiles(
+      fs.readdirSync(folderPath)
+        .filter((file) => /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(file))
+    );
 
     if (!scenarioId) {
       continue;

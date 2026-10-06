@@ -148,6 +148,124 @@ h1 {
   position: relative;
 }
 
+.welcome-screen {
+  width: min(100%, 1500px);
+  min-height: calc(100vh - 2rem);
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  border-radius: 28px;
+  background-size: 110% auto;
+  background-position: center 18%;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45);
+  position: relative;
+  isolation: isolate;
+}
+
+.welcome-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(6, 10, 15, 0.86), rgba(6, 10, 15, 0.28) 38%, rgba(6, 10, 15, 0.82)),
+    radial-gradient(circle at 15% 20%, rgba(216, 165, 74, 0.18), transparent 25%),
+    radial-gradient(circle at 80% 15%, rgba(141, 29, 29, 0.18), transparent 22%),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.045),
+      rgba(255, 255, 255, 0.045) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  z-index: 0;
+  pointer-events: none;
+}
+
+.welcome-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(216, 165, 74, 0.16), transparent 22%, transparent 72%, rgba(141, 29, 29, 0.16)),
+    rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.82);
+  mix-blend-mode: screen;
+  animation: warFlicker 8s ease-in-out infinite alternate;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.welcome-content {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 760px);
+  text-align: center;
+  display: grid;
+  place-items: center;
+  gap: 1.2rem;
+}
+
+.welcome-title {
+  margin: 0;
+  color: #f9f3e8;
+  font-size: clamp(2.5rem, 7vw, 5.6rem);
+  line-height: 0.96;
+  letter-spacing: -0.05em;
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.92), 0 0 28px rgba(216, 165, 74, 0.24);
+}
+
+.welcome-button {
+  min-width: 190px;
+  min-height: 58px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.95rem 2.3rem;
+  margin: 0;
+  border: 1px solid rgba(246, 209, 132, 0.8);
+  background: linear-gradient(135deg, rgba(216, 165, 74, 0.95), rgba(163, 95, 24, 0.95));
+  color: #1d1208;
+  box-shadow: 0 14px 30px rgba(154, 84, 16, 0.35), inset 0 0 18px rgba(255, 245, 214, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.welcome-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(154, 84, 16, 0.45), inset 0 0 18px rgba(255, 245, 214, 0.45);
+  filter: brightness(1.06);
+}
+
+@keyframes warFlicker {
+  0%, 18%, 22%, 24%, 72%, 100% {
+    opacity: 0.38;
+    transform: scale(1);
+  }
+  20%, 23% {
+    opacity: 0.82;
+    transform: scale(1.04);
+  }
+  25% {
+    opacity: 0.52;
+  }
+  70% {
+    opacity: 0.64;
+  }
+}
+
+@keyframes buttonShimmer {
+  0% {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(260%) skewX(-20deg);
+  }
+}
+
+.app[data-stage="welcome"] .welcome-screen,
 .app[data-stage="intro"] .screen,
 .app[data-stage="prologue"] .screen,
 .app[data-stage="overview"] .screen,
@@ -374,6 +492,26 @@ h1 {
   transform-origin: center;
   animation: imageReveal 0.8s ease;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background-color: rgba(17, 22, 28, 0.92);
+  background-image: linear-gradient(135deg, rgba(216, 165, 74, 0.18), rgba(9, 12, 17, 0.96));
+}
+
+.result-visual-fallback {
+  background-image: linear-gradient(135deg, rgba(94, 62, 29, 0.96), rgba(10, 12, 15, 0.96)) !important;
+  border-color: rgba(216, 165, 74, 0.32);
+}
+
+.result-visual-fallback span {
+  color: #f4d39a;
+  text-align: center;
+  padding: 2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .result-panel {

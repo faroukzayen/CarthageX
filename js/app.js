@@ -3,6 +3,10 @@ const gameApp = (() => {
   const startButton = document.getElementById('start-button');
   const data = window.GAME_DATA || { prologue: [], scenarios: [], epilogue: '' };
   const audioManager = window.AudioManager ? new window.AudioManager() : null;
+
+  function safeAssetUrl(url) {
+    return window.imgSrc ? window.imgSrc(url) : String(url || '');
+  }
   if (audioManager) {
     window.audioManager = audioManager;
   }
@@ -10,7 +14,7 @@ const gameApp = (() => {
   const state = {
     started: false,
     currentScenarioIndex: 0,
-    stage: 'intro',
+    stage: 'welcome',
     prologueStep: 0,
     choices: []
   };
@@ -28,16 +32,15 @@ const gameApp = (() => {
 
   function getManifestImage(scenarioId, optionIndex) {
     const manifestImages = window.GAME_MANIFEST?.images?.[scenarioId] || [];
-    return manifestImages[optionIndex] || 'https://placehold.co/1600x900/0f172a/d8a54a?text=Hannibal';
+    const value = manifestImages[optionIndex] || 'https://placehold.co/1600x900/0f172a/d8a54a?text=Hannibal';
+    return safeAssetUrl(value);
   }
 
   function getOptionImages(scenarioId, optionIndex) {
     const manifestImages = window.GAME_MANIFEST?.images?.[scenarioId] || [];
     const path = manifestImages[optionIndex];
-    if (Array.isArray(path)) {
-      return path.filter(Boolean);
-    }
-    return path ? [path] : [];
+    const list = Array.isArray(path) ? path : path ? [path] : [];
+    return list.filter(Boolean).map((item) => safeAssetUrl(item));
   }
 
   function syncCinemaSettings() {
@@ -67,6 +70,25 @@ const gameApp = (() => {
       return;
     }
     audioManager.speak(text);
+  }
+
+  function buildWelcomeScreen() {
+    const backgroundImage = 'images/hannibal.jpg';
+
+    return `
+      <section class="welcome-screen" style="background-image: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.52)), url('${backgroundImage}')" aria-labelledby="title-welcome">
+        <canvas id="embers" aria-hidden="true"></canvas>
+        <div class="welcome-content">
+          <p class="welcome-kicker">247 – 183 av. J.-C.</p>
+          <h1 id="title-welcome" class="welcome-title">Le Cerveau de Carthage</h1>
+          <p class="welcome-subtitle">Traversez les Alpes. Défiez Rome. Changez l'histoire.</p>
+          <div class="home-metrics" aria-label="Informations du jeu">
+            <span>15 décisions historiques</span>
+          </div>
+          <button class="primary-button welcome-button" type="button" id="launch-game">Commencer la campagne</button>
+        </div>
+      </section>
+    `;
   }
 
   function buildIntroScreen() {
@@ -204,10 +226,16 @@ const gameApp = (() => {
       ? '<span class="status-badge status-good">Fidèle à l\'histoire</span>'
       : '<span class="status-badge status-bad">Autre voie (hypothèse)</span>';
 
+    const resultVisual = (src, title) => `
+      <div class="result-visual" data-image="${src}" data-title="${title}" role="img" aria-label="${title}">
+        <span>${title}</span>
+      </div>
+    `;
+
     const alternateBlock = !selected.hannibal ? `
       <div class="result-panel alt-panel">
         <h3>Ce qu'Hannibal a vraiment fait</h3>
-        <div class="result-visual" style="background-image: url('${hannibalImage}')"></div>
+        ${resultVisual(hannibalImage, hannibalOption.texte)}
         <p>${hannibalOption.resultat}</p>
       </div>
     ` : '';
@@ -220,8 +248,7 @@ const gameApp = (() => {
         </div>
 
         <h2>${scenario.title}</h2>
-
-        <div class="result-visual" style="background-image: url('${imagePath}')"></div>
+        ${resultVisual(imagePath, selected.texte)}
 
         <p><strong>Ton choix :</strong> ${selected.texte}</p>
         <p>${selected.resultat}</p>
@@ -256,6 +283,7 @@ const gameApp = (() => {
 
   function render() {
     const stageLabels = {
+      welcome: 'Introduction',
       intro: 'Accueil',
       prologue: 'Prologue',
       overview: 'Briefing',
@@ -265,9 +293,17 @@ const gameApp = (() => {
       results: 'Bilan final'
     };
 
-    appElement.dataset.stage = state.stage || 'intro';
+    document.body.classList.toggle('home-active', state.stage === 'welcome');
+    appElement.dataset.stage = state.stage || 'welcome';
     appElement.setAttribute('aria-label', stageLabels[state.stage] || 'Jeu');
     appElement.classList.remove('is-animated');
+
+    if (state.stage === 'welcome') {
+      appElement.innerHTML = buildWelcomeScreen();
+      bindIntroEvents();
+      requestAnimationFrame(() => appElement.classList.add('is-animated'));
+      return;
+    }
 
     if (!state.started) {
       appElement.innerHTML = buildIntroScreen();
@@ -433,6 +469,29 @@ const gameApp = (() => {
   }
 
   function bindResultEvents() {
+    document.querySelectorAll('.result-visual').forEach((visual) => {
+      const src = visual.dataset.image || '';
+      const title = visual.dataset.title || '';
+      const image = new Image();
+
+      image.onload = () => {
+        visual.style.backgroundImage = `url("${src}")`;
+        visual.classList.remove('result-visual-fallback');
+        visual.querySelector('span')?.remove();
+      };
+
+      image.onerror = () => {
+        visual.classList.add('result-visual-fallback');
+        visual.setAttribute('aria-label', title);
+        const label = visual.querySelector('span');
+        if (label) {
+          label.textContent = title;
+        }
+      };
+
+      image.src = src;
+    });
+
     const nextButton = document.getElementById('next-scenario');
     nextButton?.addEventListener('click', () => {
       const scenario = getCurrentScenario();

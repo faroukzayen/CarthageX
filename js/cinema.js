@@ -66,12 +66,31 @@
     else if (e.key.toLowerCase() === "m") toggleMute();
   }
   function subtitle(t) { root.querySelector(".cin-sub").textContent = S.subtitles ? t : ""; }
+  function safeAssetUrl(url) {
+    return window.imgSrc ? window.imgSrc(url) : String(url || '');
+  }
   function preload(list) {
-    list.forEach(src => { if (!src) return; const im = new Image(); im.onerror = () => bad.add(src); im.src = src; });
+    const failed = [];
+    list.forEach(src => {
+      if (!src) return;
+      const im = new Image();
+      const safe = safeAssetUrl(src);
+      im.onload = () => {};
+      im.onerror = () => {
+        bad.add(src);
+        failed.push({ src, scenario: 'cinema' });
+      };
+      im.src = safe;
+    });
+    if (failed.length) {
+      console.warn('[Images] Cinéma — chargement impossible', failed);
+    }
   }
   function showImage(src) {
     const next = layers[1 - activeLayer], prev = layers[activeLayer];
-    next.style.backgroundImage = (src && !bad.has(src)) ? `url("${src}")` : PLACEHOLDER;
+    const safe = src ? safeAssetUrl(src) : '';
+    const useFallback = !src || bad.has(src);
+    next.style.backgroundImage = useFallback ? PLACEHOLDER : `url("${safe}")`;
     next.classList.remove("kb", "alt", "on"); void next.offsetWidth;
     next.classList.add("kb", "on"); if (Math.random() < 0.5) next.classList.add("alt");
     prev.classList.remove("on");

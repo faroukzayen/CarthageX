@@ -7,24 +7,16 @@
       name="description"
       content="Jeu narratif interactif inspiré de la vie d'Hannibal Barca."
     />
-    <title>Dans la peau d'Hannibal</title>
+    <meta property="og:title" content="Le Cerveau de Carthage" />
+    <meta property="og:description" content="Traversez les Alpes. Défiez Rome. Changez l'histoire." />
+    <meta property="og:image" content="images/hannibal.jpg" />
+    <title>Le Cerveau de Carthage</title>
+    <link rel="preload" as="image" href="images/hannibal.jpg" />
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/home.css" />
   </head>
   <body>
     <div class="app-shell">
-      <header class="topbar" aria-label="Barre de navigation du jeu">
-        <div class="brand-wrap">
-          <span class="brand-mark">H</span>
-          <div>
-            <p class="eyebrow">Festival des Francophonies de Sousse</p>
-            <h1>Dans la peau d'Hannibal</h1>
-          </div>
-        </div>
-        <button class="ghost-button" type="button" id="start-button" aria-label="Commencer le jeu">
-          Commencer
-        </button>
-      </header>
-
       <main id="app" class="app" aria-live="polite"></main>
     </div>
 
@@ -33,7 +25,9 @@
     <script src="js/analysis-data.js"></script>
     <script src="js/results.js"></script>
     <script src="js/audio.js"></script>
+    <script src="js/images.js"></script>
     <script src="js/cinema.js"></script>
+    <script src="js/home.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>
