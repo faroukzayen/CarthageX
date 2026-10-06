@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Hannibal AI backend
 
 ## Run
@@ -17,3 +18,6 @@ Copy data/scenes/alps.json, change ids (trasimene_01...), facts, options, fallba
 ## Contract
 POST /advice  /review  /verdict   (see schemas.py). State always comes from the game engine.
 If the LLM fails or output is invalid twice, the pre-written fallback is returned (source = "fallback").
+=======
+# CarthageX
+>>>>>>> 36b3f92e1ca565f67cc0a50a246eb9e575f576a8
