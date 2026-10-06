@@ -1,0 +1,57 @@
+{
+  "scene_id": "alps",
+  "title": "Les Alpes (218 av. J.-C.)",
+  "situation": "Automne 218 av. J.-C. Vous êtes Hannibal, en Gaule. Rome contrôle les mers. Pour l'attaquer chez elle, vous devez atteindre l'Italie avant l'hiver. Comment y allez-vous ?",
+  "options": [
+    {"id": "A", "text": "Franchir les Alpes par les cols, malgré la saison tardive"},
+    {"id": "B", "text": "Embarquer l'armée sur des navires vers l'Italie"},
+    {"id": "C", "text": "Attendre le printemps en Gaule avant de partir"}
+  ],
+  "historical_option_id": "A",
+  "forbidden_reveal": ["la meilleure option", "le meilleur choix", "choisis l'option a", "choisis a", "the best option", "choose option a"],
+  "facts": [
+    {"id": "alps_01", "text": "Hannibal part de Carthagène (Nouvelle-Carthage) au printemps 218 av. J.-C. pour rejoindre l'Italie par voie terrestre.", "source": "Polybe III (à vérifier)", "certainty": "FAIT_SOURCE", "debate": null},
+    {"id": "alps_02", "text": "La traversée des Alpes a lieu à l'automne 218 av. J.-C. ; Polybe signale que la neige couvrait déjà les cols.", "source": "Polybe III, 54 (à vérifier)", "certainty": "FAIT_SOURCE", "debate": null},
+    {"id": "alps_03", "text": "Selon Polybe, l'armée compte environ 38 000 fantassins et 8 000 cavaliers au passage du Rhône, et environ 20 000 fantassins et 6 000 cavaliers à l'arrivée en Italie.", "source": "Polybe III, 35 et 56 (à vérifier)", "certainty": "PROBABLE", "debate": "Chiffres transmis par les sources antiques, à prendre avec prudence."},
+    {"id": "alps_04", "text": "Polybe mentionne 37 éléphants dans l'armée d'Hannibal au départ.", "source": "Polybe III, 42 (à vérifier)", "certainty": "PROBABLE", "debate": "Un chiffre rapporté par un auteur ; le nombre d'éléphants arrivés en Italie est discuté."},
+    {"id": "alps_05", "text": "L'itinéraire exact de la traversée des Alpes est inconnu : plusieurs cols sont proposés par les historiens.", "source": "Débat historiographique", "certainty": "FAIT_SOURCE", "debate": "Cols souvent cités : Traversette, Clapier, Mont-Cenis, entre autres."},
+    {"id": "alps_06", "text": "Des tribus de montagne harcèlent l'armée par des embuscades et des attaques sur les défilés.", "source": "Polybe III ; Tite-Live XXI (à vérifier)", "certainty": "FAIT_SOURCE", "debate": null},
+    {"id": "alps_07", "text": "Polybe indique que la traversée a duré environ quinze jours.", "source": "Polybe III, 56 (à vérifier)", "certainty": "PROBABLE", "debate": null},
+    {"id": "alps_08", "text": "Les principales sources sur Hannibal sont grecques et romaines (Polybe, Tite-Live) : des auteurs extérieurs à Carthage, souvent du côté des vainqueurs.", "source": "Historiographie", "certainty": "FAIT_SOURCE", "debate": null},
+    {"id": "alps_09", "text": "Depuis la première guerre punique, Rome domine la mer, ce qui rend un transport maritime d'une grande armée très risqué pour Carthage.", "source": "Contexte historique (à vérifier)", "certainty": "PROBABLE", "debate": null},
+    {"id": "alps_10", "text": "Hannibal choisit la voie terrestre et franchit les Alpes plutôt que d'attendre ou de passer par la mer.", "source": "Polybe III ; Tite-Live XXI", "certainty": "FAIT_SOURCE", "debate": null, "spoiler": true}
+  ],
+  "fallbacks": {
+    "advice": {
+      "role": "advisor",
+      "message": "Général, chaque voie a son prix. La mer est dominée par Rome, l'attente donne du temps à nos ennemis, et les montagnes coûtent cher en hommes. Pesez ce que vous pouvez perdre.",
+      "claims": [{"text": "Rome domine la mer depuis la première guerre punique.", "label": "PROBABLE", "fact_id": "alps_09"}]
+    },
+    "review": {
+      "A": {
+        "role": "supervisor",
+        "message": "Tu as pris le risque, comme moi. Les cols étaient déjà enneigés et les tribus nous harcelaient, mais Rome ne nous attendait pas là.",
+        "claims": [
+          {"text": "La traversée a eu lieu à l'automne 218 av. J.-C., avec de la neige sur les cols.", "label": "FAIT_SOURCE", "fact_id": "alps_02"},
+          {"text": "Des tribus de montagne ont harcelé l'armée.", "label": "FAIT_SOURCE", "fact_id": "alps_06"}
+        ],
+        "comparison_with_history": "Ton choix correspond à celui d'Hannibal.",
+        "lesson_modern": "Un risque calculé peut créer un effet de surprise que l'adversaire n'anticipe pas."
+      },
+      "B": {
+        "role": "supervisor",
+        "message": "La mer semblait plus sûre, mais Rome la dominait. Une flotte romaine aurait pu détruire l'armée avant même d'atteindre la côte.",
+        "claims": [{"text": "Rome dominait la mer depuis la première guerre punique.", "label": "PROBABLE", "fact_id": "alps_09"}],
+        "comparison_with_history": "Hannibal a choisi la voie terrestre par les Alpes.",
+        "lesson_modern": "Une option qui paraît sûre peut dépendre d'un terrain où l'adversaire est plus fort."
+      },
+      "C": {
+        "role": "supervisor",
+        "message": "Attendre le printemps évite la neige, mais donne à Rome le temps de se préparer. L'avantage de la surprise se serait peut-être envolé.",
+        "claims": [{"text": "Rome aurait eu plus de temps pour organiser sa défense.", "label": "HYPOTHESE_IA", "fact_id": null}],
+        "comparison_with_history": "Hannibal n'a pas attendu : il a franchi les Alpes à l'automne.",
+        "lesson_modern": "Attendre le moment parfait a aussi un coût : l'adversaire s'adapte."
+      }
+    }
+  }
+}
