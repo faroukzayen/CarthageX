@@ -3,6 +3,9 @@ const gameApp = (() => {
   const startButton = document.getElementById('start-button');
   const data = window.GAME_DATA || { prologue: [], scenarios: [], epilogue: '' };
   const audioManager = window.AudioManager ? new window.AudioManager() : null;
+  if (audioManager) {
+    window.audioManager = audioManager;
+  }
 
   const state = {
     started: false,
@@ -26,6 +29,37 @@ const gameApp = (() => {
   function getManifestImage(scenarioId, optionIndex) {
     const manifestImages = window.GAME_MANIFEST?.images?.[scenarioId] || [];
     return manifestImages[optionIndex] || 'https://placehold.co/1600x900/0f172a/d8a54a?text=Hannibal';
+  }
+
+  function getOptionImages(scenarioId, optionIndex) {
+    const manifestImages = window.GAME_MANIFEST?.images?.[scenarioId] || [];
+    const path = manifestImages[optionIndex];
+    if (Array.isArray(path)) {
+      return path.filter(Boolean);
+    }
+    return path ? [path] : [];
+  }
+
+  function syncCinemaSettings() {
+    if (!window.Cinema || !audioManager) {
+      return;
+    }
+
+    window.Cinema.settings.vol = audioManager.volume;
+    window.Cinema.settings.rate = audioManager.rate;
+    window.Cinema.settings.muted = audioManager.isMuted;
+    window.Cinema.settings.subtitles = true;
+  }
+
+  function playCinemaSequence(chapters) {
+    if (!window.Cinema) {
+      console.error('[Cinema] non disponible : le jeu continue sans le diaporama.');
+      return Promise.resolve();
+    }
+
+    syncCinemaSettings();
+    audioManager?.cancel();
+    return window.Cinema.playSequence(chapters);
   }
 
   function speakNarration(text) {
@@ -313,13 +347,29 @@ const gameApp = (() => {
     const backButton = document.getElementById('back-to-intro');
 
     nextButton?.addEventListener('click', () => {
-      if (state.prologueStep < (data.prologue || []).length - 1) {
-        state.prologueStep += 1;
+      const chapters = (data.prologue || []).map((entry) => ({
+        title: entry.title,
+        badge: null,
+        images: [],
+        text: entry.text
+      }));
+      const current = chapters[state.prologueStep];
+
+      if (!current) {
+        state.stage = 'overview';
         render();
         return;
       }
-      state.stage = 'overview';
-      render();
+
+      playCinemaSequence([current]).then(() => {
+        if (state.prologueStep < (data.prologue || []).length - 1) {
+          state.prologueStep += 1;
+          render();
+          return;
+        }
+        state.stage = 'overview';
+        render();
+      });
     });
 
     backButton?.addEventListener('click', () => {
@@ -352,10 +402,32 @@ const gameApp = (() => {
 
         const choiceEntry = { id: scenario.id, index: originalIndex };
         state.choices.push(choiceEntry);
-        state.stage = 'result';
 
-        speakNarration(chosen.resultat);
-        render();
+        const hIndex = scenario.options.findIndex((option) => option.hannibal);
+        const selectedImages = getOptionImages(scenario.id, originalIndex);
+        const chapters = [{
+          title: chosen.texte,
+          badge: chosen.hannibal
+            ? { txt: 'Fidèle à l\'histoire', cls: 'ok' }
+            : { txt: 'Autre voie (hypothèse)', cls: 'ko' },
+          images: selectedImages,
+          text: chosen.resultat
+        }];
+
+        if (!chosen.hannibal && hIndex >= 0) {
+          chapters.push({
+            title: 'Ce qu\'Hannibal a vraiment fait',
+            badge: null,
+            images: getOptionImages(scenario.id, hIndex),
+            text: scenario.options[hIndex].resultat,
+            cardMs: 1500
+          });
+        }
+
+        playCinemaSequence(chapters).then(() => {
+          state.stage = 'result';
+          render();
+        });
       });
     });
   }
@@ -382,8 +454,17 @@ const gameApp = (() => {
   function bindEpilogueEvents() {
     const showResultsButton = document.getElementById('show-results');
     showResultsButton?.addEventListener('click', () => {
-      state.stage = 'results';
-      render();
+      const epilogueChapter = {
+        title: 'La fin d\'un génie',
+        badge: null,
+        images: [],
+        text: data.epilogue
+      };
+
+      playCinemaSequence([epilogueChapter]).then(() => {
+        state.stage = 'results';
+        render();
+      });
     });
   }
 

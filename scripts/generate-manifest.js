@@ -84,6 +84,60 @@ function main() {
   const output = `window.GAME_MANIFEST = ${JSON.stringify(manifest, null, 2)};\n`;
   fs.writeFileSync(outputFile, output, 'utf8');
   console.log('Manifest généré :', outputFile);
+  console.log('Scénarios avec images :');
+  for (const [scenarioId, images] of Object.entries(manifest.images)) {
+    console.log(`${scenarioId}: ${images.length} image${images.length === 1 ? '' : 's'}`);
+  }
 }
 
-main();
+function normalizeManifestImages(manifest) {
+  const normalized = { ...manifest, images: {} };
+
+  for (const [scenarioId, entries] of Object.entries(manifest.images || {})) {
+    const values = Array.isArray(entries) ? entries : [entries];
+    normalized.images[scenarioId] = values
+      .filter((entry) => typeof entry === 'string' && entry.trim())
+      .map((entry) => entry.trim());
+  }
+
+  return normalized;
+}
+
+function buildManifest() {
+  if (!fs.existsSync(imagesDir)) {
+    throw new Error('Dossier images introuvable : ' + imagesDir);
+  }
+
+  const folders = fs.readdirSync(imagesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+
+  const manifest = {
+    version: 1,
+    images: {},
+    audio: { ambiance: 'assets/audio/ambiance.mp3', narration: {} },
+    fallback: {
+      image: 'https://placehold.co/1600x900/0f172a/d8a54a?text=Hannibal',
+      audio: null
+    }
+  };
+
+  for (const folder of folders) {
+    const scenarioId = matchScenario(folder);
+    const folderPath = path.join(imagesDir, folder);
+    const files = fs.readdirSync(folderPath)
+      .filter((file) => /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(file));
+
+    if (!scenarioId) {
+      continue;
+    }
+
+    manifest.images[scenarioId] = sortByName(files).map((file) => path.join('images', folder, file).split(path.sep).join('/'));
+  }
+
+  return manifest;
+}
+
+if (require.main === module) {
+  main();
+}

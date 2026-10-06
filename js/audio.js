@@ -65,4 +65,5 @@ class AudioManager {
 
 if (typeof window !== 'undefined') {
   window.AudioManager = AudioManager;
+  window.audioManager = null;
 }
