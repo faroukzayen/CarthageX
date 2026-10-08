@@ -23,6 +23,15 @@ const gameApp = (() => {
     return data.scenarios[state.currentScenarioIndex] || null;
   }
 
+  function getTimelineProgress() {
+    const scenarios = data.scenarios || [];
+    if (scenarios.length < 2) {
+      return 0;
+    }
+
+    return (state.currentScenarioIndex / (scenarios.length - 1)) * 100;
+  }
+
   function getHannibalOption(scenario) {
     if (!scenario) {
       return null;
@@ -158,14 +167,16 @@ const gameApp = (() => {
       return '<section class="screen hero-panel"><p>Le scénario est introuvable.</p></section>';
     }
 
+    const timelineProgress = getTimelineProgress();
+
     return `
       <section class="screen hero-panel" aria-labelledby="scenario-title">
         <div class="timeline">
           <span>${scenario.year}</span>
-          <span>Frise chronologique</span>
+          <span>Épisode ${state.currentScenarioIndex + 1}/${data.scenarios.length}</span>
         </div>
         <div class="timeline-bar" aria-hidden="true">
-          <div class="timeline-fill"></div>
+          <div class="timeline-fill" style="width: ${timelineProgress}%"></div>
         </div>
 
         <div>
@@ -203,13 +214,49 @@ const gameApp = (() => {
 
     return `
       <section class="screen hero-panel" aria-labelledby="choices-title">
-        <div>
-          <p class="eyebrow">Choix</p>
-          <h2 id="choices-title">${scenario.title}</h2>
+        <div class="choices-header">
+          <div>
+            <p class="eyebrow">Choix</p>
+            <h2 id="choices-title">${scenario.title}</h2>
+          </div>
+          <button class="secondary-button maharbal-toggle" type="button" aria-expanded="false" aria-controls="maharbal-panel">
+            <span class="maharbal-icon" aria-hidden="true">
+              <img src="images/maharbal-logo.svg" alt="Logo Maharbal" />
+            </span>
+            <span class="maharbal-toggle-label">L’assistant Maharbal</span>
+          </button>
         </div>
         <div class="choice-grid">
           ${choices}
         </div>
+
+        <aside class="maharbal-panel" id="maharbal-panel" hidden>
+          <div class="maharbal-header">
+            <div class="maharbal-avatar" aria-label="Icône Maharbal">M</div>
+            <div>
+              <p class="eyebrow">Conseiller militaire</p>
+              <h3>Maharbal</h3>
+            </div>
+          </div>
+          <p class="maharbal-intro">Je examine le contexte, puis je te donne les avantages, les limites et les risques.</p>
+          <form class="maharbal-form" id="maharbal-form">
+            <label for="maharbal-question">Pose-moi une question</label>
+            <textarea id="maharbal-question" rows="3" placeholder="Que me conseille-tu ? Quel est le sens de l’embuscade ?"></textarea>
+            <div class="maharbal-actions">
+              <button class="primary-button" type="submit" id="maharbal-submit">Demander son avis</button>
+              <button class="secondary-button" type="button" id="clear-maharbal">Effacer</button>
+            </div>
+            <div class="maharbal-quick-actions" aria-label="Questions rapides">
+              <button class="small-button" type="button" data-quick-question="Pour et contre des options">Pour et contre des options</button>
+              <button class="small-button" type="button" data-quick-question="Explique-moi un mot">Explique-moi un mot</button>
+              <button class="small-button" type="button" data-quick-question="Rappelle la situation">Rappelle la situation</button>
+            </div>
+          </form>
+          <div class="maharbal-response" id="maharbal-response" role="status" aria-live="polite">
+            <span class="maharbal-response-label">Réponse de Maharbal</span>
+            <p>Pose une question sur le choix, un mot ou un lieu de cette campagne.</p>
+          </div>
+        </aside>
       </section>
     `;
   }
@@ -426,10 +473,125 @@ const gameApp = (() => {
 
   function bindChoiceEvents() {
     const buttons = document.querySelectorAll('.choice-button');
+    const panel = document.getElementById('maharbal-panel');
+    const toggle = document.querySelector('.maharbal-toggle');
+    const form = document.getElementById('maharbal-form');
+    const input = document.getElementById('maharbal-question');
+    const response = document.getElementById('maharbal-response');
+    const submitButton = document.getElementById('maharbal-submit');
+    const scenario = getCurrentScenario();
+    const scenarioId = scenario?.id || '';
+    const advisor = window.MaharbalAdvisor ? window.MaharbalAdvisor.createAdvisor(scenario) : null;
+    const askWorker = window.MaharbalClient?.askMaharbal;
+
+    function renderMaharbalText(text) {
+      response.innerHTML = `<p>${String(text || '').replace(/\n/g, '<br>')}</p>`;
+    }
+
+    function setSubmitting(isSubmitting) {
+      submitButton?.toggleAttribute('disabled', isSubmitting);
+      submitButton.textContent = isSubmitting ? 'Maharbal réfléchit…' : 'Demander son avis';
+    }
+
+    async function askBackend(question) {
+      if (!askWorker || !scenarioId) {
+        return null;
+      }
+
+      return askWorker(scenarioId, question);
+    }
+
+    function renderQuickActions(actions) {
+      const actionButtons = actions.map((action) => `
+        <button class="secondary-button maharbal-action" type="button" data-action="${action.id}">
+          ${action.label}
+        </button>
+      `).join('');
+
+      response.insertAdjacentHTML('beforeend', `<div class="maharbal-quick-actions">${actionButtons}</div>`);
+
+      response.querySelectorAll('.maharbal-action').forEach((button) => {
+        button.addEventListener('click', () => {
+          const action = actions.find((entry) => entry.id === button.dataset.action);
+          if (!action) {
+            return;
+          }
+
+          input.value = action.value;
+          form.requestSubmit();
+        });
+      });
+    }
+
+    function renderMaharbalError(message) {
+      renderMaharbalText(`${message} Je reprends donc une réponse locale.`);
+    }
+
+    toggle?.addEventListener('click', () => {
+      const isHidden = panel?.hasAttribute('hidden');
+      panel?.toggleAttribute('hidden', !isHidden);
+      toggle.setAttribute('aria-expanded', String(isHidden));
+    });
+
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!input || !response) {
+        return;
+      }
+
+      const question = input.value.trim();
+      if (!question) {
+        renderMaharbalText('Pose une question, et je te donnerai mon avis.');
+        return;
+      }
+
+      setSubmitting(true);
+      response.innerHTML = '<p>Je rassemble les éléments historiques…</p>';
+
+      try {
+        let answer = '';
+
+        try {
+          answer = await askBackend(question);
+          if (!answer) {
+            answer = advisor ? advisor.answer(question) : '';
+          }
+        } catch (error) {
+          console.warn('[Maharbal] relay indisponible, utilisation du conseiller local.', error);
+          if (!advisor) {
+            renderMaharbalText('Le conseiller local et le serveur distant sont indisponibles.');
+            return;
+          }
+          answer = advisor.answer(question);
+        }
+
+        renderMaharbalText(answer);
+
+        if (advisor && /Je ne vois pas ce terme ou ce lieu clairement\./.test(answer)) {
+          response.querySelectorAll('.maharbal-action').forEach((button) => button.remove());
+          renderQuickActions(advisor.getQuickActions());
+        }
+      } finally {
+        setSubmitting(false);
+      }
+    });
+
+    document.querySelectorAll('[data-quick-question]').forEach((button) => {
+      button.addEventListener('click', () => {
+        input.value = button.dataset.quickQuestion || '';
+        form.requestSubmit();
+      });
+    });
+
+    document.getElementById('clear-maharbal')?.addEventListener('click', () => {
+      input.value = '';
+      response.innerHTML = '<p>Pose une question sur le choix, un mot ou un lieu de cette campagne.</p>';
+      input.focus();
+    });
+
     buttons.forEach((button) => {
       button.addEventListener('click', () => {
         const originalIndex = Number(button.dataset.index);
-        const scenario = getCurrentScenario();
         const chosen = scenario?.options[originalIndex];
 
         if (!scenario || !chosen) {
@@ -500,12 +662,14 @@ const gameApp = (() => {
       if (isLastScenario) {
         state.currentScenarioIndex = 0;
         state.stage = 'epilogue';
+        window.MaharbalClient?.maharbalHistory.splice(0);
         render();
         return;
       }
 
       state.currentScenarioIndex += 1;
       state.stage = 'overview';
+      window.MaharbalClient?.maharbalHistory.splice(0);
       render();
     });
   }
@@ -537,6 +701,7 @@ const gameApp = (() => {
       state.currentScenarioIndex = 0;
       state.stage = 'overview';
       state.choices = [];
+      window.MaharbalClient?.maharbalHistory.splice(0);
       render();
     });
 
